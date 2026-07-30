@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OK-TRAINER — kartičky pro zkoušku HAREC</title>
-<meta name="theme-color" content="#12181a">
+<meta name="theme-color" content="#eee8d9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12181a" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,22 +15,52 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <style>
   :root{
+    /* --- chassis / panel / text: adaptivní podle motivu zařízení --- */
     --chassis:#12181a;
     --panel:#1b2426;
     --panel-2:#212c2e;
-    --lcd:#0c1a17;
-    --lcd-border:#324442;
-    --amber:#ffb020;
-    --amber-dim:#8a6a2c;
-    --green:#6fe3a0;
-    --green-dim:#2f5c48;
-    --red:#e2543a;
-    --red-dim:#6b2f26;
+    --border:#2a3436;
     --text:#eae6d9;
     --text-muted:#8b9a95;
+    --panel-accent:#ffb020;
+    --panel-accent-dim:#8a6a2c;
+    --green-ui:#6fe3a0;
+    --green-dim-ui:#2f5c48;
+    --red-ui:#e2543a;
+    --red-dim-ui:#6b2f26;
+
+    /* --- LCD displej kartičky: vždy tmavý, jako skutečný VFD/LCD panel --- */
+    --lcd:#0c1a17;
+    --lcd-border:#324442;
+    --lcd-text:#eae6d9;
+    --lcd-muted:#8b9a95;
+    --amber:#ffb020;
+    --green:#6fe3a0;
+    --red:#e2543a;
+
     --mono: ui-monospace, "Cascadia Code", "SF Mono", "Courier New", monospace;
     --serif: Georgia, "Times New Roman", serif;
     --sans: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --chassis:#eee8d9;
+      --panel:#ffffff;
+      --panel-2:#efe8d6;
+      --border:#d9d2bd;
+      --text:#2b2a25;
+      --text-muted:#6b6558;
+      --panel-accent:#a85d00;
+      --panel-accent-dim:#d9b27a;
+      --green-ui:#1f8a5c;
+      --green-dim-ui:#8fc7ac;
+      --red-ui:#c23b26;
+      --red-dim-ui:#e3a89a;
+      --lcd:#ffffff;
+      --lcd-border:#d9d2bd;
+      --lcd-text:#2b2a25;
+      --lcd-muted:#948c78;
+    }
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -48,7 +79,7 @@
     font-family:var(--serif);
     font-size:26px;
     letter-spacing:2px;
-    color:var(--amber);
+    color:var(--panel-accent);
     margin:0 0 4px;
   }
   .sub{
@@ -66,7 +97,7 @@
     background:var(--panel);
     padding:6px;
     border-radius:10px;
-    border:1px solid #2a3436;
+    border:1px solid var(--border);
   }
   nav.bandswitch button{
     font-family:var(--mono);
@@ -81,8 +112,8 @@
   }
   nav.bandswitch button.active{
     background:var(--panel-2);
-    color:var(--amber);
-    border-color:var(--amber-dim);
+    color:var(--panel-accent);
+    border-color:var(--panel-accent-dim);
   }
   .subgroupbar{
     margin-bottom:14px;
@@ -95,8 +126,8 @@
     font-size:13px;
     padding:10px 12px;
     background:var(--panel);
-    color:var(--amber);
-    border:1px solid #2a3436;
+    color:var(--panel-accent);
+    border:1px solid var(--border);
     border-radius:8px;
     appearance:none;
     -webkit-appearance:none;
@@ -126,9 +157,12 @@
     gap:14px;
   }
   .counts b{color:var(--text);font-weight:600;}
-  .counts .ok{color:var(--green);}
-  .counts .bad{color:var(--red);}
+  .counts .ok{color:var(--green-ui);}
+  .counts .bad{color:var(--red-ui);}
   .smeter{width:150px;height:60px;flex-shrink:0;}
+  #smeter path{stroke:var(--border);}
+  #smeter text{fill:var(--text-muted);}
+  #smeter text.warn{fill:var(--red-ui);}
   .card{
     background:var(--lcd);
     border:2px solid var(--lcd-border);
@@ -150,7 +184,7 @@
     font-family:var(--mono);
     font-size:10px;
     letter-spacing:1px;
-    color:var(--text-muted);
+    color:var(--lcd-muted);
     text-transform:uppercase;
   }
   .card .hint{
@@ -159,22 +193,22 @@
     right:16px;
     font-family:var(--mono);
     font-size:10px;
-    color:var(--text-muted);
+    color:var(--lcd-muted);
   }
   .card .face{
     font-family:var(--serif);
     font-size:20px;
     line-height:1.5;
-    color:var(--text);
+    color:var(--lcd-text);
   }
   .card.flipped .face{
     font-family:var(--mono);
     font-size:24px;
-    color:var(--amber);
+    color:var(--panel-accent);
     font-weight:600;
   }
   .card.done{
-    color:var(--green);
+    color:var(--green-ui);
   }
   .controls{
     display:grid;
@@ -193,14 +227,14 @@
   }
   #btnBad{
     background:transparent;
-    color:var(--red);
-    border-color:var(--red-dim);
+    color:var(--red-ui);
+    border-color:var(--red-dim-ui);
   }
   #btnBad:hover{background:rgba(226,84,58,0.1);}
   #btnGood{
     background:transparent;
-    color:var(--green);
-    border-color:var(--green-dim);
+    color:var(--green-ui);
+    border-color:var(--green-dim-ui);
   }
   #btnGood:hover{background:rgba(111,227,160,0.1);}
   .controls button:disabled{opacity:0.35;cursor:default;}
@@ -230,7 +264,7 @@
     cursor:pointer;
     padding:0;
   }
-  .toolbar button.link:hover{color:var(--amber);}
+  .toolbar button.link:hover{color:var(--panel-accent);}
   .keys{
     margin-top:22px;
     text-align:center;
@@ -240,7 +274,7 @@
   }
   .keys kbd{
     background:var(--panel-2);
-    border:1px solid #33403f;
+    border:1px solid var(--border);
     border-radius:4px;
     padding:1px 6px;
     color:var(--text);
@@ -276,7 +310,7 @@
       <g id="smeterTicks"></g>
       <text x="12" y="52" fill="#8b9a95" font-family="ui-monospace,monospace" font-size="8">S1</text>
       <text x="70" y="14" fill="#8b9a95" font-family="ui-monospace,monospace" font-size="8" text-anchor="middle">S9</text>
-      <text x="132" y="52" fill="#e2543a" font-family="ui-monospace,monospace" font-size="8" text-anchor="end">+40</text>
+      <text x="132" y="52" class="warn" font-family="ui-monospace,monospace" font-size="8" text-anchor="end">+40</text>
       <line id="needle" x1="75" y1="55" x2="75" y2="12" stroke="#ffb020" stroke-width="2" stroke-linecap="round"/>
       <circle cx="75" cy="55" r="3.5" fill="#ffb020"/>
     </svg>
@@ -755,13 +789,18 @@ function updateStats(){
   updateMeter();
 }
 
+function cssVar(name, fallback){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
 function updateMeter(){
   const total = state.sessionGood + state.sessionBad;
   const ratio = total === 0 ? 0.15 : state.sessionGood / total;
   const angle = -90 + ratio * 180;
   const needle = document.getElementById("needle");
   needle.setAttribute("transform", "rotate(" + angle + " 75 55)");
-  needle.setAttribute("stroke", ratio > 0.7 ? "#6fe3a0" : (ratio > 0.4 ? "#ffb020" : "#e2543a"));
+  needle.setAttribute("stroke", ratio > 0.7 ? cssVar('--green-ui','#6fe3a0') : (ratio > 0.4 ? cssVar('--panel-accent','#ffb020') : cssVar('--red-ui','#e2543a')));
 }
 
 function drawMeterTicks(){
@@ -774,7 +813,7 @@ function drawMeterTicks(){
     const cx=75, cy=55, rOuter=32, rInner=27;
     const x1 = cx + rInner*Math.sin(ang), y1 = cy - rInner*Math.cos(ang);
     const x2 = cx + rOuter*Math.sin(ang), y2 = cy - rOuter*Math.cos(ang);
-    const color = t > 0.75 ? "#e2543a" : "#33403f";
+    const color = t > 0.75 ? cssVar('--red-ui','#e2543a') : cssVar('--border','#33403f');
     html += '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+color+'" stroke-width="1.5"/>';
   }
   g.innerHTML = html;
@@ -858,6 +897,13 @@ document.addEventListener("keydown", e => {
 
 drawMeterTicks();
 setCategory(state.cat);
+
+if(window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    drawMeterTicks();
+    updateMeter();
+  });
+}
 </script>
 </body>
 </html>
