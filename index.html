@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OK-TRAINER — kartičky pro zkoušku HAREC</title>
+<meta name="theme-color" content="#12181a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OK-Trainer">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+  :root{
+    --chassis:#12181a;
+    --panel:#1b2426;
+    --panel-2:#212c2e;
+    --lcd:#0c1a17;
+    --lcd-border:#324442;
+    --amber:#ffb020;
+    --amber-dim:#8a6a2c;
+    --green:#6fe3a0;
+    --green-dim:#2f5c48;
+    --red:#e2543a;
+    --red-dim:#6b2f26;
+    --text:#eae6d9;
+    --text-muted:#8b9a95;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", "Courier New", monospace;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--chassis);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:24px 16px 60px;
+    display:flex;
+    justify-content:center;
+  }
+  .wrap{width:100%;max-width:640px;}
+  header{margin-bottom:18px;text-align:center;}
+  .callsign{
+    font-family:var(--serif);
+    font-size:26px;
+    letter-spacing:2px;
+    color:var(--amber);
+    margin:0 0 4px;
+  }
+  .sub{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-muted);
+    letter-spacing:1px;
+    text-transform:uppercase;
+  }
+  nav.bandswitch{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:6px;
+    margin:20px 0 10px;
+    background:var(--panel);
+    padding:6px;
+    border-radius:10px;
+    border:1px solid #2a3436;
+  }
+  nav.bandswitch button{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.5px;
+    padding:10px 4px;
+    background:transparent;
+    color:var(--text-muted);
+    border:1px solid transparent;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  nav.bandswitch button.active{
+    background:var(--panel-2);
+    color:var(--amber);
+    border-color:var(--amber-dim);
+  }
+  .subgroupbar{
+    margin-bottom:14px;
+    display:none;
+  }
+  .subgroupbar.visible{display:block;}
+  .subgroupbar select{
+    width:100%;
+    font-family:var(--mono);
+    font-size:13px;
+    padding:10px 12px;
+    background:var(--panel);
+    color:var(--amber);
+    border:1px solid #2a3436;
+    border-radius:8px;
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  .subgroupbar{position:relative;}
+  .subgroupbar::after{
+    content:"▾";
+    position:absolute;
+    right:16px;
+    top:12px;
+    color:var(--text-muted);
+    font-size:12px;
+    pointer-events:none;
+  }
+  .statbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:16px;
+  }
+  .counts{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-muted);
+    display:flex;
+    gap:14px;
+  }
+  .counts b{color:var(--text);font-weight:600;}
+  .counts .ok{color:var(--green);}
+  .counts .bad{color:var(--red);}
+  .smeter{width:150px;height:60px;flex-shrink:0;}
+  .card{
+    background:var(--lcd);
+    border:2px solid var(--lcd-border);
+    border-radius:12px;
+    min-height:220px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:32px 24px;
+    cursor:pointer;
+    user-select:none;
+    position:relative;
+  }
+  .card .tag{
+    position:absolute;
+    top:12px;
+    left:16px;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:1px;
+    color:var(--text-muted);
+    text-transform:uppercase;
+  }
+  .card .hint{
+    position:absolute;
+    bottom:12px;
+    right:16px;
+    font-family:var(--mono);
+    font-size:10px;
+    color:var(--text-muted);
+  }
+  .card .face{
+    font-family:var(--serif);
+    font-size:20px;
+    line-height:1.5;
+    color:var(--text);
+  }
+  .card.flipped .face{
+    font-family:var(--mono);
+    font-size:24px;
+    color:var(--amber);
+    font-weight:600;
+  }
+  .card.done{
+    color:var(--green);
+  }
+  .controls{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:16px;
+  }
+  .controls button{
+    font-family:var(--sans);
+    font-size:14px;
+    font-weight:600;
+    padding:14px 10px;
+    border-radius:8px;
+    cursor:pointer;
+    border:1px solid;
+  }
+  #btnBad{
+    background:transparent;
+    color:var(--red);
+    border-color:var(--red-dim);
+  }
+  #btnBad:hover{background:rgba(226,84,58,0.1);}
+  #btnGood{
+    background:transparent;
+    color:var(--green);
+    border-color:var(--green-dim);
+  }
+  #btnGood:hover{background:rgba(111,227,160,0.1);}
+  .controls button:disabled{opacity:0.35;cursor:default;}
+  .toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:18px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .toolbar label{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-muted);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .toolbar button.link{
+    background:none;
+    border:none;
+    color:var(--text-muted);
+    font-family:var(--mono);
+    font-size:12px;
+    text-decoration:underline;
+    cursor:pointer;
+    padding:0;
+  }
+  .toolbar button.link:hover{color:var(--amber);}
+  .keys{
+    margin-top:22px;
+    text-align:center;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-muted);
+  }
+  .keys kbd{
+    background:var(--panel-2);
+    border:1px solid #33403f;
+    border-radius:4px;
+    padding:1px 6px;
+    color:var(--text);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="callsign">OK-TRAINER</p>
+    <p class="sub">kartičky pro zkoušku HAREC · třída A</p>
+  </header>
+
+  <nav class="bandswitch" id="bandswitch">
+    <button data-cat="qkody">Q-kódy</button>
+    <button data-cat="zkratky">Zkratky</button>
+    <button data-cat="prefixy">Prefixy</button>
+    <button data-cat="pasma">Pásma</button>
+  </nav>
+
+  <div class="subgroupbar" id="subgroupbar">
+    <select id="subgroupSelect"></select>
+  </div>
+
+  <div class="statbar">
+    <div class="counts">
+      <span>umím <b class="ok" id="cntGood">0</b></span>
+      <span>neumím <b class="bad" id="cntBad">0</b></span>
+      <span>zbývá <b id="cntLeft">0</b></span>
+    </div>
+    <svg class="smeter" viewBox="0 0 150 60" id="smeter">
+      <path d="M 10 55 A 65 65 0 0 1 140 55" fill="none" stroke="#33403f" stroke-width="3"/>
+      <g id="smeterTicks"></g>
+      <text x="12" y="52" fill="#8b9a95" font-family="ui-monospace,monospace" font-size="8">S1</text>
+      <text x="70" y="14" fill="#8b9a95" font-family="ui-monospace,monospace" font-size="8" text-anchor="middle">S9</text>
+      <text x="132" y="52" fill="#e2543a" font-family="ui-monospace,monospace" font-size="8" text-anchor="end">+40</text>
+      <line id="needle" x1="75" y1="55" x2="75" y2="12" stroke="#ffb020" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="75" cy="55" r="3.5" fill="#ffb020"/>
+    </svg>
+  </div>
+
+  <div class="card" id="card">
+    <span class="tag" id="cardTag">Q-KÓDY</span>
+    <div class="face" id="cardFace">načítám…</div>
+    <span class="hint" id="cardHint">klikni pro otočení</span>
+  </div>
+
+  <div class="controls">
+    <button id="btnBad" disabled>✗ Neznal jsem</button>
+    <button id="btnGood" disabled>✓ Znal jsem</button>
+  </div>
+
+  <div class="toolbar">
+    <label><input type="checkbox" id="onlyHard"> jen obtížné</label>
+    <button class="link" id="btnShuffle">zamíchat znovu</button>
+    <button class="link" id="btnReset">resetovat postup výběru</button>
+  </div>
+
+  <p class="keys">
+    <kbd>mezerník</kbd> otočit &nbsp; <kbd>←</kbd> neznal jsem &nbsp; <kbd>→</kbd> znal jsem
+  </p>
+</div>
+
+<script>
+// Každá položka: [přední strana, zadní strana, podskupina]
+// U qkody a zkratky podskupina není potřeba (celá kategorie = jedna skupina "all")
+const DATA = {
+qkody: [
+["Jsem rušen interferencí:","QRM","all"],
+["Můžete zvýšit výkon?","QRO?","all"],
+["Volá vás:","QRZ","all"],
+["Počkejte, až vás zavolám:","QRX","all"],
+["Síla vašich signálů kolísá:","QSB","all"],
+["Vysílejte pomaleji:","QRS","all"],
+["Přestaňte vysílat:","QRT","all"],
+["Snižte výkon:","QRP","all"],
+["Jste připraven?","QRV?","all"],
+["Nemám pro vás nic nového:","QRU","all"],
+["Potvrzuji příjem:","QSL","all"],
+["Jste zaměstnán? Je kmitočet obsazen nebo volný?","QRL?","all"],
+["Moje poloha je:","QTH","all"],
+["Jste rušen atmosférickým rušením?","QRN?","all"],
+["Mohu pracovat s … přímo (prostřednictvím)?","QSO?","all"],
+["Mám přejít k vysílání na jiný kmitočet?","QSY?","all"],
+["Vysílejte řadu V:","QSV","all"],
+["Můžete mě poslouchat mezi svými značkami?","QSK?","all"],
+["Nemohu vás přijímat, vaše signály jsou velmi slabé:","QRJ","all"],
+["Jaká je čitelnost mých značek?","QRK?","all"],
+["Slovo dvakrát:","QSZ","all"]
+],
+zkratky: [
+["střídavý proud","AC","all"],
+["slyšen, slyšeno","HRD","all"],
+["radioamatér","HAM","all"],
+["opakovat","RPT","all"],
+["rádiový kmitočet","RF","all"],
+["automatické řízení úrovně","ALC","all"],
+["přijímač","RX","all"],
+["zařízení","RIG","all"],
+["vše","ALL","all"],
+["automatické řízení zisku","AGC","all"],
+["jak?","HW?","all"],
+["smích","HI","all"],
+["report","RPRT / RST","all"],
+["super vysoký kmitočet","SHF","all"],
+["amplitudová modulace","AM","all"],
+["opět, zase","AGN","all"],
+["já","I","all"],
+["signály","SIGS","all"],
+["anténa","AER / ANT","all"],
+["konec vysílání","SK","all"],
+["informace","INFO","all"],
+["čekejte","AS","all"],
+["mezifrekvence / kdyby","IF","all"],
+["domluvené spojení","SKED","all"],
+["rušení rozhlasu","BCI","all"],
+["stanice","STN","all"],
+["jedno postranní pásmo","SSB","all"],
+["slunečno","SUNNY","all"],
+["zavolání, značka","CALL","all"],
+["vysílejte","K","all"],
+["uzavírám stanici","CL","all"],
+["nízký kmitočet","LF","all"],
+["krátké vlny","SW","all"],
+["špatný operátor","LID","all"],
+["činitel stojatých vln","PSV / SWR","all"],
+["zataženo","OVERCAST","all"],
+["podmínky pro spojení","CONDS","all"],
+["teplota","TEMP","all"],
+["staniční deník","LOG","all"],
+["všeobecná výzva","CQ","all"],
+["pokus","TEST","all"],
+["děkuji","TNX / TKS","all"],
+["rušení televize","TVI","all"],
+["dlouhý drát, dlouhé vlny","LW","all"],
+["decibel","dB","all"],
+["vysílač","TX","all"],
+["stejnosměrný proud","DC","all"],
+["k","TO","all"],
+["spodní postranní pásmo","LSB","all"],
+["Mezinárodní telekomunikační unie","ITU / UIT","all"],
+["Mezinárodní radioamatérská unie","IARU","all"],
+["přímo","DIRECT","all"],
+["milý, drahý","DR","all"],
+["diplom","AWARD","all"],
+["dálkové spojení","DX","all"],
+["váš, tvůj","UR","all"],
+["elektronický klíč","ELBUG","all"],
+["z, ze","DE","all"],
+["za","FER","all"],
+["pěkný, výborný","FB","all"],
+["elektronky","TBS","all"],
+["velmi pěkný","UFB","all"],
+["kmitočtová modulace","FM","all"],
+["jen","ONLY","all"],
+["přítel","OM","all"],
+["dobré odpoledne","GA","all"],
+["dobré ráno","GM","all"],
+["dobrý večer","GE","all"],
+["sbohem","GB","all"],
+["znovu","CUAGN","all"],
+["koncesovaný","LIS","all"],
+["nekoncesovaný","UNLIS","all"],
+["transceiver","TRX","all"],
+["prvek, element","EL","all"],
+["ultravysoký kmitočet","UHF","all"],
+["můj","MY","all"],
+["proměnný oscilátor","VFO","all"],
+["ne","NO","all"],
+["obálka s adresou a známkou","SASE","all"],
+["telegrafie, netlumená vlna","CW","all"],
+["světový čas koordinovaný","UTC","all"],
+["velmi vysoký kmitočet","VHF","all"],
+["v pořádku","OK","all"],
+["fonie","FONE","all"],
+["přes, prostřednictvím","VIA","all"],
+["operátor","OP","all"],
+["velmi","VY","all"],
+["pracoval, pracující","WKD","all"],
+["radioamatérská družice","OSCAR","all"],
+["dobrý den","GD","all"],
+["watty","WTTS","all"],
+["počasí","WX","all"],
+["štěstí, hodně štěstí","GL","all"],
+["oblačno","CLOUDY","all"],
+["rád, potěšen","GLD","all"],
+["koncový stupeň","PA","all"],
+["manželka","XYL","all"],
+["špičkový výkon","PEP","all"],
+["slečna, přítelkyně","YL","all"],
+["prosím","PSE","all"],
+["dobrou noc","GN","all"],
+["výkon","PWR","all"],
+["srdečný pozdrav","73","all"],
+["polibek","88","all"],
+["země, uzemnění","GND","all"],
+["správně přijato","R","all"],
+["zmiz!","99","all"],
+["staniční lístek nezašlu","QSLN","all"],
+["konec relace","AR","all"],
+["přerušit","BK","all"],
+["doufat","HPE","all"],
+["automatické řízení hlasitosti","AVC","all"],
+["podmínky pro dálkové spojení","CONDX","all"],
+["asi, přibližně","ABT","all"],
+["poloautomatický klíč","BUG","all"],
+["zde, tady","HR","all"],
+["pokračujte","GA","all"],
+["potvrdit","CFM","all"],
+["a","ES","all"],
+["dolů","DWN","all"],
+["zapsat, porozumět","CPI / CPY","all"],
+["šťastný","HPY","all"],
+["klíč","KY","all"],
+["později na shledanou","CUL","all"],
+["začátek relace","KA","all"],
+["nic","NIL","all"],
+["brzy","SN","all"],
+["krátkovlnný posluchač","SWL","all"],
+["jistě, určitě","SURE","all"],
+["lituji, bohužel","SRI / SRY","all"],
+["metr","MTR","all"],
+["blízko, u","NR / NEAR","all"],
+["síť","NET","all"],
+["přijal, přijato","RCVD","all"],
+["poslat, zaslat","SEND","all"],
+["nahoru","UP","all"],
+["Vánoce","XMAS","all"],
+["horní postranní pásmo","USB","all"],
+["rušení rádiového kmitočtu","RFI","all"],
+["přecházím na poslech pro určitou stanici","KN","all"]
+],
+prefixy: [
+["Česká republika","OL, OK","Sousedé ČR"],
+["Slovensko","OM","Sousedé ČR"],
+["Rakousko","OE","Sousedé ČR"],
+["Německo","DA–DR","Sousedé ČR"],
+["Polsko","HF, SN–SR, 3Z","Sousedé ČR"],
+["Maďarsko","HA, HG","Sousedé ČR"],
+["Švédsko","SA–SM, 7S, 8S","Skandinávie a sever. Atlantik"],
+["Finsko","OF–OJ","Skandinávie a sever. Atlantik"],
+["Dánsko","OU–OZ, XP, 5P, 5Q","Skandinávie a sever. Atlantik"],
+["Norsko","LA–LN, 3Y","Skandinávie a sever. Atlantik"],
+["Island","TF","Skandinávie a sever. Atlantik"],
+["Špicberky","JW","Skandinávie a sever. Atlantik"],
+["Jan Mayen","JX","Skandinávie a sever. Atlantik"],
+["Alandské ostrovy","OH0","Skandinávie a sever. Atlantik"],
+["Market Reef","OJ0","Skandinávie a sever. Atlantik"],
+["Grónsko","OX","Skandinávie a sever. Atlantik"],
+["Faerské ostrovy","OY","Skandinávie a sever. Atlantik"],
+["Anglie","G, GX","Britské ostrovy"],
+["Skotsko","GM, GS","Britské ostrovy"],
+["Wales","GW, GC, MW","Britské ostrovy"],
+["Severní Irsko","GI, GN, MI","Britské ostrovy"],
+["Ostrov Man","GD, GT, MD","Britské ostrovy"],
+["Jersey","GJ, GH, MJ","Britské ostrovy"],
+["Guernsey","GU, GP, MU","Britské ostrovy"],
+["Irsko","EI, EJ","Britské ostrovy"],
+["Španělsko","EA–EH","Pyrenejský poloostrov"],
+["Kanárské ostrovy","EA8–EH8","Pyrenejský poloostrov"],
+["Baleáry","EA6–EH6","Pyrenejský poloostrov"],
+["Ceuta a Melilla","EA9–EH9","Pyrenejský poloostrov"],
+["Portugalsko","CQ–CU","Pyrenejský poloostrov"],
+["Azory","CQ2, CR2, CS2, CT2, CU2","Pyrenejský poloostrov"],
+["Andorra","C3","Pyrenejský poloostrov"],
+["Řecko","SV–SZ, J4","Balkán"],
+["Dodekanésy","SV5–SZ5","Balkán"],
+["Kréta","SV9–SZ9","Balkán"],
+["Slovinsko","S5","Balkán"],
+["Chorvatsko","9A","Balkán"],
+["Bosna a Hercegovina","E7","Balkán"],
+["Srbsko","YT–YU","Balkán"],
+["Černá Hora","4O","Balkán"],
+["Makedonie","Z3","Balkán"],
+["Albánie","ZA","Balkán"],
+["Bulharsko","LZ","Balkán"],
+["Rumunsko","YO–YR","Balkán"],
+["Rusko","UA–UI","Bývalý SSSR / vých. Evropa"],
+["Ukrajina","EM–EO, UR–UZ","Bývalý SSSR / vých. Evropa"],
+["Bělorusko","EU–EW","Bývalý SSSR / vých. Evropa"],
+["Estonsko","ES","Bývalý SSSR / vých. Evropa"],
+["Lotyšsko","YL","Bývalý SSSR / vých. Evropa"],
+["Litva","LY","Bývalý SSSR / vých. Evropa"],
+["Moldavsko","ER","Bývalý SSSR / vých. Evropa"],
+["Arménie","EK","Bývalý SSSR / vých. Evropa"],
+["Gruzie","4L","Bývalý SSSR / vých. Evropa"],
+["Nizozemsko","PA–PI","Ostatní záp./již. Evropa"],
+["Francie","F–FZ, F1–F0, HW, TH, TK, TM, TO, TV","Ostatní záp./již. Evropa"],
+["Korsika","TK","Ostatní záp./již. Evropa"],
+["Itálie","I, IA–IZ","Ostatní záp./již. Evropa"],
+["Sardinie","IS0, IM0","Ostatní záp./již. Evropa"],
+["Švýcarsko","HB, HE","Ostatní záp./již. Evropa"],
+["Lichtenštejnsko","HB0","Ostatní záp./již. Evropa"],
+["Belgie","ON–OT","Ostatní záp./již. Evropa"],
+["Lucembursko","LX","Ostatní záp./již. Evropa"],
+["Monako","3A","Ostatní záp./již. Evropa"],
+["San Marino","T7","Ostatní záp./již. Evropa"],
+["Vatikán","HV","Ostatní záp./již. Evropa"],
+["Malta","9H","Ostatní záp./již. Evropa"],
+["Turecko","TA–TC, YM","Ostatní záp./již. Evropa"],
+["Spojené státy americké","K, N, W, AA–AK","Amerika"],
+["Kanada","CF–CK, CY–CZ, VA–VE, VO, VX, VY, XJ–XO","Amerika"],
+["Brazílie","PP–PY","Amerika"],
+["Argentina","LO–LW","Amerika"],
+["Mexiko","XE–XI","Amerika"],
+["Kuba","CL, CM, CO, T4","Amerika"],
+["Japonsko","JA–JS, 7J–7N, 8J–8N","Asie a Pacifik"],
+["Čína","BA–BZ (vč. B1–B0)","Asie a Pacifik"],
+["Tchaj-wan","BV","Asie a Pacifik"],
+["Jižní Korea","DS–DT, D7–D9, HL","Asie a Pacifik"],
+["Severní Korea","P5–P9","Asie a Pacifik"],
+["Thajsko","HS","Asie a Pacifik"],
+["Saúdská Arábie","HZ, 7Z","Asie a Pacifik"],
+["Indie","VU","Asie a Pacifik"],
+["Izrael","4X, 4Z","Asie a Pacifik"],
+["Austrálie","VK","Asie a Pacifik"],
+["Nový Zéland","ZL–ZM","Asie a Pacifik"],
+["Jihoafrická republika","ZR–ZU","Jižní Afrika"]
+],
+pasma: [
+["V pásmu 1,8 MHz je výhradně pro CW provoz určen úsek:","1810 – 1838 kHz","160 m (1,8 MHz)"],
+["V pásmu 1,8 MHz je pro digitální provozy určen úsek:","1838 – 1843 kHz","160 m (1,8 MHz)"],
+["V pásmu 1,8 MHz je celý úsek pro FONE provoz:","1840 – 2000 kHz","160 m (1,8 MHz)"],
+["V pásmu 3,5 MHz je výhradně pro CW DX provoz určen úsek:","3500 – 3510 kHz","80 m (3,5 MHz)"],
+["V pásmu 3,5 MHz je výhradně pro CW provoz určen úsek:","3500 – 3580 kHz","80 m (3,5 MHz)"],
+["V pásmu 3,5 MHz je pro digitální provozy určen úsek:","3580 – 3620 kHz","80 m (3,5 MHz)"],
+["V pásmu 3,5 MHz je celý úsek pro FONE provoz:","3600 – 3800 kHz","80 m (3,5 MHz)"],
+["V pásmu 7 MHz je výhradně pro CW provoz určen úsek:","7000 – 7040 kHz","40 m (7 MHz)"],
+["V pásmu 7 MHz je pro digitální provozy určen úsek:","7040 – 7060 kHz","40 m (7 MHz)"],
+["V pásmu 7 MHz je celý úsek pro FONE provoz:","7050 – 7200 kHz","40 m (7 MHz)"],
+["V pásmu 10 MHz je pro digitální provozy určen úsek:","10140 – 10150 kHz","30 m (10 MHz, WARC)"],
+["V pásmu 10 MHz je celý úsek pro FONE provoz:","FONE provoz není povolen","30 m (10 MHz, WARC)"],
+["V pásmu 14 MHz je výhradně pro CW provoz určen úsek:","14000 – 14070 kHz","20 m (14 MHz)"],
+["V pásmu 14 MHz je pro digitální provozy určen úsek:","14070 – 14099 kHz","20 m (14 MHz)"],
+["V pásmu 14 MHz je celý úsek pro FONE provoz:","14101 – 14350 kHz","20 m (14 MHz)"],
+["V pásmu 18 MHz je výhradně pro CW provoz určen úsek:","18068 – 18095 kHz","17 m (18 MHz, WARC)"],
+["V pásmu 18 MHz je celý úsek pro FONE provoz:","18111 – 18168 kHz","17 m (18 MHz, WARC)"],
+["V pásmu 21 MHz je výhradně pro CW provoz určen úsek:","21000 – 21070 kHz","15 m (21 MHz)"],
+["V pásmu 21 MHz je celý úsek pro FONE provoz:","21151 – 21450 kHz","15 m (21 MHz)"],
+["V pásmu 24 MHz je výhradně pro CW provoz určen úsek:","24890 – 24915 kHz","12 m (24 MHz, WARC)"],
+["V pásmu 24 MHz je celý úsek pro FONE provoz:","24931 – 24990 kHz","12 m (24 MHz, WARC)"],
+["V pásmu 28 MHz je výhradně pro CW provoz určen úsek:","28000 – 28070 kHz","10 m (28 MHz)"],
+["V pásmu 28 MHz je pro FONE provoz určen úsek:","28225 – 29300 kHz","10 m (28 MHz)"],
+["Výhradně pro družicový down-link je v pásmu 28 MHz určen úsek:","29300 – 29510 kHz","10 m (28 MHz)"],
+["Pro pouze CW provoz je v pásmu 50–52 MHz určen úsek:","50 – 50,1 MHz","6 m (50–52 MHz)"],
+["V pásmu 50–52 MHz jsou povoleny všechny úzkopásmové provozy v úseku:","50,1 – 52 MHz","6 m (50–52 MHz)"],
+["V pásmu 50–52 MHz je přímý FM FONE provoz povolen v úseku:","51,410 – 51,590 MHz","6 m (50–52 MHz)"],
+["Pro pouze CW provoz je v pásmu 144–146 MHz určen úsek:","144,000 – 144,110 MHz","2 m (144–146 MHz)"],
+["Výhradně pro majáky je v pásmu 144–146 MHz určen úsek:","144,400 – 144,490 MHz","2 m (144–146 MHz)"],
+["Výhradně pro provoz přes družice je v pásmu 144–146 MHz určen úsek:","145,806 – 146,0 MHz","2 m (144–146 MHz)"],
+["CW provoz se v pásmu 430–440 MHz přednostně uskutečňuje v úseku:","432,025 – 432,1 MHz","70 cm (430–440 MHz)"],
+["Pro CW i SSB provoz je v pásmu 430–440 MHz určen úsek:","432,1 – 432,400 MHz","70 cm (430–440 MHz)"],
+["Výhradně pro majáky je v pásmu 430–440 MHz určen úsek:","432,400 – 432,490 MHz","70 cm (430–440 MHz)"],
+["V pásmu 430–440 MHz jsou všechny druhy provozu povoleny v úseku:","432,5 – 432,975 MHz","70 cm (430–440 MHz)"],
+["Mezi pásma WARC patří:","30 m, 17 m, 12 m","Obecná pravidla"],
+["Fonický provoz LSB nelze uskutečnit na kmitočtu:","10,14 MHz (nad 10 MHz je jen USB, navíc 30 m nemá fonii vůbec)","Obecná pravidla"],
+["Fonický provoz USB nelze uskutečnit na kmitočtu:","14,35 MHz (horní hrana pásma FONE na 20 m)","Obecná pravidla"]
+]
+};
+
+// pořadí podskupin v rozbalovacím seznamu
+const GROUP_ORDER = {
+prefixy: ["Sousedé ČR","Skandinávie a sever. Atlantik","Britské ostrovy","Pyrenejský poloostrov","Balkán","Bývalý SSSR / vých. Evropa","Ostatní záp./již. Evropa","Amerika","Asie a Pacifik","Jižní Afrika"],
+pasma: ["160 m (1,8 MHz)","80 m (3,5 MHz)","40 m (7 MHz)","30 m (10 MHz, WARC)","20 m (14 MHz)","17 m (18 MHz, WARC)","15 m (21 MHz)","12 m (24 MHz, WARC)","10 m (28 MHz)","6 m (50–52 MHz)","2 m (144–146 MHz)","70 cm (430–440 MHz)","Obecná pravidla"]
+};
+
+const CAT_LABELS = {qkody:"Q-KÓDY", zkratky:"ZKRATKY", prefixy:"PREFIXY", pasma:"PÁSMA"};
+const STORAGE_KEY = "hamtrainer_v2";
+
+function loadProgress(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveProgress(p){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); }catch(e){}
+}
+
+let progress = loadProgress();
+let state = {
+  cat: localStorage.getItem("hamtrainer_lastcat") || "qkody",
+  group: "__all__",
+  deck: [],
+  pos: 0,
+  flipped: false,
+  sessionGood: 0,
+  sessionBad: 0
+};
+
+function cardKey(cat, idx){ return cat + ":" + idx; }
+function getBox(cat, idx){
+  const k = cardKey(cat, idx);
+  return progress[k] || 1;
+}
+function setBox(cat, idx, box){
+  progress[cardKey(cat, idx)] = Math.max(1, Math.min(5, box));
+  saveProgress(progress);
+}
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function hasGroups(cat){
+  return cat === "prefixy" || cat === "pasma";
+}
+
+function renderSubgroupBar(){
+  const bar = document.getElementById("subgroupbar");
+  const sel = document.getElementById("subgroupSelect");
+  if(!hasGroups(state.cat)){
+    bar.classList.remove("visible");
+    return;
+  }
+  bar.classList.add("visible");
+  const groups = GROUP_ORDER[state.cat];
+  const label = state.cat === "pasma" ? "Všechna pásma" : "Všechny regiony";
+  let html = '<option value="__all__">' + label + '</option>';
+  groups.forEach(g => {
+    html += '<option value="' + g.replace(/"/g,'&quot;') + '">' + g + '</option>';
+  });
+  sel.innerHTML = html;
+  sel.value = state.group;
+}
+
+function buildDeck(){
+  const items = DATA[state.cat];
+  const onlyHard = document.getElementById("onlyHard").checked;
+  let indices = items.map((_, i) => i);
+  if(hasGroups(state.cat) && state.group !== "__all__"){
+    indices = indices.filter(i => items[i][2] === state.group);
+  }
+  if(onlyHard){
+    const filteredByHard = indices.filter(i => getBox(state.cat, i) <= 2);
+    if(filteredByHard.length > 0) indices = filteredByHard;
+  }
+  let weighted = [];
+  indices.forEach(i => {
+    const box = getBox(state.cat, i);
+    const weight = Math.max(1, 6 - box);
+    for(let w=0; w<weight; w++) weighted.push(i);
+  });
+  state.deck = shuffle(weighted);
+  state.pos = 0;
+  state.flipped = false;
+}
+
+function currentItem(){
+  if(state.pos >= state.deck.length) return null;
+  const idx = state.deck[state.pos];
+  return {idx, front: DATA[state.cat][idx][0], back: DATA[state.cat][idx][1]};
+}
+
+function renderCard(){
+  const card = document.getElementById("card");
+  const face = document.getElementById("cardFace");
+  const hint = document.getElementById("cardHint");
+  const tag = document.getElementById("cardTag");
+  const groupLabel = hasGroups(state.cat) && state.group !== "__all__" ? " · " + state.group : "";
+  tag.textContent = CAT_LABELS[state.cat] + groupLabel;
+  const item = currentItem();
+  const btnGood = document.getElementById("btnGood");
+  const btnBad = document.getElementById("btnBad");
+
+  if(!item){
+    card.classList.remove("flipped");
+    card.classList.add("done");
+    face.textContent = "Výběr procvičen ✓ — zamíchej znovu";
+    hint.textContent = "";
+    btnGood.disabled = true;
+    btnBad.disabled = true;
+    updateStats();
+    return;
+  }
+  card.classList.remove("done");
+  if(state.flipped){
+    card.classList.add("flipped");
+    face.textContent = item.back;
+    hint.textContent = "klikni pro otočení zpět";
+    btnGood.disabled = false;
+    btnBad.disabled = false;
+  }else{
+    card.classList.remove("flipped");
+    face.textContent = item.front;
+    hint.textContent = "klikni pro otočení";
+    btnGood.disabled = true;
+    btnBad.disabled = true;
+  }
+  updateStats();
+}
+
+function updateStats(){
+  document.getElementById("cntGood").textContent = state.sessionGood;
+  document.getElementById("cntBad").textContent = state.sessionBad;
+  document.getElementById("cntLeft").textContent = Math.max(0, state.deck.length - state.pos);
+  updateMeter();
+}
+
+function updateMeter(){
+  const total = state.sessionGood + state.sessionBad;
+  const ratio = total === 0 ? 0.15 : state.sessionGood / total;
+  const angle = -90 + ratio * 180;
+  const needle = document.getElementById("needle");
+  needle.setAttribute("transform", "rotate(" + angle + " 75 55)");
+  needle.setAttribute("stroke", ratio > 0.7 ? "#6fe3a0" : (ratio > 0.4 ? "#ffb020" : "#e2543a"));
+}
+
+function drawMeterTicks(){
+  const g = document.getElementById("smeterTicks");
+  const ticks = 9;
+  let html = "";
+  for(let i=0;i<=ticks;i++){
+    const t = i/ticks;
+    const ang = (-90 + t*180) * Math.PI/180;
+    const cx=75, cy=55, rOuter=32, rInner=27;
+    const x1 = cx + rInner*Math.sin(ang), y1 = cy - rInner*Math.cos(ang);
+    const x2 = cx + rOuter*Math.sin(ang), y2 = cy - rOuter*Math.cos(ang);
+    const color = t > 0.75 ? "#e2543a" : "#33403f";
+    html += '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+color+'" stroke-width="1.5"/>';
+  }
+  g.innerHTML = html;
+}
+
+function flip(){
+  if(!currentItem()) return;
+  state.flipped = !state.flipped;
+  renderCard();
+}
+
+function grade(good){
+  const item = currentItem();
+  if(!item) return;
+  const box = getBox(state.cat, item.idx);
+  setBox(state.cat, item.idx, good ? box+1 : 1);
+  if(good) state.sessionGood++; else state.sessionBad++;
+  state.pos++;
+  state.flipped = false;
+  renderCard();
+}
+
+function setCategory(cat){
+  state.cat = cat;
+  state.group = "__all__";
+  localStorage.setItem("hamtrainer_lastcat", cat);
+  document.querySelectorAll("#bandswitch button").forEach(b => {
+    b.classList.toggle("active", b.dataset.cat === cat);
+  });
+  state.sessionGood = 0;
+  state.sessionBad = 0;
+  renderSubgroupBar();
+  buildDeck();
+  renderCard();
+}
+
+function setGroup(group){
+  state.group = group;
+  state.sessionGood = 0;
+  state.sessionBad = 0;
+  buildDeck();
+  renderCard();
+}
+
+document.getElementById("bandswitch").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-cat]");
+  if(btn) setCategory(btn.dataset.cat);
+});
+document.getElementById("subgroupSelect").addEventListener("change", e => {
+  setGroup(e.target.value);
+});
+document.getElementById("card").addEventListener("click", flip);
+document.getElementById("btnGood").addEventListener("click", () => grade(true));
+document.getElementById("btnBad").addEventListener("click", () => grade(false));
+document.getElementById("btnShuffle").addEventListener("click", () => {
+  state.sessionGood = 0; state.sessionBad = 0;
+  buildDeck(); renderCard();
+});
+document.getElementById("btnReset").addEventListener("click", () => {
+  const scope = hasGroups(state.cat) && state.group !== "__all__" ? state.group : CAT_LABELS[state.cat];
+  if(!confirm("Resetovat uložený postup pro \"" + scope + "\"?")) return;
+  const items = DATA[state.cat];
+  items.forEach((it, i) => {
+    if(state.group === "__all__" || it[2] === state.group){
+      delete progress[cardKey(state.cat, i)];
+    }
+  });
+  saveProgress(progress);
+  state.sessionGood = 0; state.sessionBad = 0;
+  buildDeck(); renderCard();
+});
+document.getElementById("onlyHard").addEventListener("change", () => {
+  state.sessionGood = 0; state.sessionBad = 0;
+  buildDeck(); renderCard();
+});
+document.addEventListener("keydown", e => {
+  if(e.code === "Space"){ e.preventDefault(); flip(); }
+  else if(e.code === "ArrowRight" && state.flipped){ grade(true); }
+  else if(e.code === "ArrowLeft" && state.flipped){ grade(false); }
+});
+
+drawMeterTicks();
+setCategory(state.cat);
+</script>
+</body>
+</html>
