@@ -4,7 +4,7 @@
 
 Aplikace je zde: https://dushino.github.io/Czech-HAREC-A-Trainer/
 
-- Jedná "aplikaci", která předloží otázku, uživatel na ni odpoví, skontroluje, jestli byla odpověď správná a nakonec označí, jestli odpověď znal nebo ne.
+- Jedná se o "aplikaci", která předloží katičku s otázkou, uživatel na ni odpoví, kartičku otočí a skontroluje, jestli byla odpověď správná a nakonec označí, jestli odpověď znal nebo ne.
 - Otázky a odpovědi jsou dle https://ctu.gov.cz/sites/default/files/obsah/amaterske_zkousky_faq_06-2025.pdf - verze z 17. 6. 2025
 - Otázky jsou seskupeny dle témat a podoblastí, např. kmitočtový plán dle pásem. Takto se snadněji učí.
 - Aplikace nepoužívá žádný cloud pro ukládání dat. Veškeré statistiky jsou uloženy v paměti prohlížeče (na lokálním úložišti), takže pokud k aplikaci přistupujete z různých prohlížečů / různých zařízení, statistiky se mezi nimi nepřenášejí. To může být výhoda i nevýhoda.
