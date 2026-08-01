@@ -694,6 +694,31 @@ function shuffle(arr){
   return arr;
 }
 
+// Sestaví pořadí kartiček tak, aby se stejná kartička nikdy neobjevila
+// dvakrát za sebou, ale zachovalo se procentuální zastoupení dané vahou
+// (Leitnerův box). Jde o standardní řešení úlohy "rozlož multimnožinu tak,
+// aby žádné dva sousední prvky nebyly stejné" (greedy podle zbývajícího počtu).
+function buildNoAdjacentSequence(countsObj){
+  let items = Object.keys(countsObj).map(k => ({idx: Number(k), count: countsObj[k]}));
+  const total = items.reduce((a,b) => a + b.count, 0);
+  let result = [];
+  let last = null;
+  while(result.length < total){
+    let candidates = items.filter(i => i.count > 0 && i.idx !== last);
+    if(candidates.length === 0){
+      // Nevyhnutelné opakování (např. zbyla jen jedna kartička) — povolíme ho.
+      candidates = items.filter(i => i.count > 0);
+    }
+    const maxCount = Math.max(...candidates.map(c => c.count));
+    const top = candidates.filter(c => c.count === maxCount);
+    const choice = top[Math.floor(Math.random() * top.length)];
+    result.push(choice.idx);
+    choice.count--;
+    last = choice.idx;
+  }
+  return result;
+}
+
 function hasGroups(cat){
   return !!GROUP_ORDER[cat];
 }
@@ -727,13 +752,12 @@ function buildDeck(){
     const filteredByHard = indices.filter(i => getBox(state.cat, i) <= 2);
     if(filteredByHard.length > 0) indices = filteredByHard;
   }
-  let weighted = [];
+  const counts = {};
   indices.forEach(i => {
     const box = getBox(state.cat, i);
-    const weight = Math.max(1, 6 - box);
-    for(let w=0; w<weight; w++) weighted.push(i);
+    counts[i] = Math.max(1, 6 - box);
   });
-  state.deck = shuffle(weighted);
+  state.deck = buildNoAdjacentSequence(counts);
   state.pos = 0;
   state.flipped = false;
 }
