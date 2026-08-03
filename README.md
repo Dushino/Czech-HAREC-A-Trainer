@@ -14,8 +14,9 @@ Aplikace je zde: https://dushino.github.io/Czech-HAREC-A-Trainer/
   - Klepněte na ikonu tří teček vpravo nahoře vedle adresního řádku. V nabídce vyberte možnost _Přidat na plochu_ a poté _Vytvořit zástupce_  (nebo _Přidat_). Potvrďte název a volbu dokončete klepnutím na _Přidat_.
 - Jiná možnost je uložení adresy do záložek prohlížeče - funguje u všech prohlížečů i operačních systémů.
 - Ještě jiná možnost, která funguje i bez datového připojení je soubor https://dushino.github.io/Czech-HAREC-A-Trainer/ stáhnout (nyní potřebujete data) do mobilu nebo počítače a pak jej přes správce souborů otevřít v prohlížeči (nyní už data nepotřebujete).
-- Aplikace byla vytvořena pomocí Claude AI dle mých instrukcí.
+- Aplikace byla vytvořena pomocí Claude AI dle mých instrukcí. Jestliže máte námět na zlepšení, dejte vědět založením chyby. C9lem je mít funkční aplikaci, která pomáhá, ne nějaký AI blábol.
 - **Prosím, buďte si vědomi toho, že se zříkám jakékoliv odpovědnosti za důsledky použití aplikace. Ačkoliv to vypadá, že odpovědi jsou správné, dosud jsem všechny neskontroloval. Jsem také přesvědčen, že "aplikace" funguje dle popisu, ale testuji to postupně**
 
 _Držím palce při zkoušce!_
+
 _Dushino_
