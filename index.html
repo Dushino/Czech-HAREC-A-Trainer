@@ -639,7 +639,7 @@ pasma: [
 ["Výhradně pro majáky je v pásmu 430–440 MHz určen úsek:","432,400 – 432,490 MHz","70 cm (430–440 MHz)"],
 ["V pásmu 430–440 MHz jsou všechny druhy provozu povoleny v úseku:","432,5 – 432,975 MHz","70 cm (430–440 MHz)"],
 ["Mezi pásma WARC patří:","30 m, 17 m, 12 m","Obecná pravidla"],
-["Lze uskutečnit fonický provoz LSB na kmitočtu 10,14 MHz?:","Ne. (Nad 10 MHz je jen USB, navíc 30 m nemá fonii vůbec.)","Obecná pravidla"],
+["Lze uskutečnit fonický provoz LSB na kmitočtu 10,14 MHz?","Ne. (Nad 10 MHz je jen USB, navíc 30 m nemá fonii vůbec.)","Obecná pravidla"],
 ["Lze uskutečnit fonický provoz USB na kmitočtu 14,35 MHz?","Ne. (Je to horní hrana pásma FONE na 20 m.)","Obecná pravidla"]
 ]
 };
@@ -861,9 +861,25 @@ function grade(good){
   renderCard();
 }
 
+function loadLastGroups(){
+  try{
+    const raw = localStorage.getItem("hamtrainer_lastgroups");
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveLastGroup(cat, group){
+  try{
+    const all = loadLastGroups();
+    all[cat] = group;
+    localStorage.setItem("hamtrainer_lastgroups", JSON.stringify(all));
+  }catch(e){}
+}
+
 function setCategory(cat){
   state.cat = cat;
-  state.group = "__all__";
+  const saved = loadLastGroups()[cat];
+  const validGroups = GROUP_ORDER[cat] || [];
+  state.group = (saved && validGroups.includes(saved)) ? saved : "__all__";
   localStorage.setItem("hamtrainer_lastcat", cat);
   document.querySelectorAll("#bandswitch button").forEach(b => {
     b.classList.toggle("active", b.dataset.cat === cat);
@@ -877,6 +893,7 @@ function setCategory(cat){
 
 function setGroup(group){
   state.group = group;
+  saveLastGroup(state.cat, group);
   state.sessionGood = 0;
   state.sessionBad = 0;
   buildDeck();
