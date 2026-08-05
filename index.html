@@ -280,6 +280,75 @@
     padding:1px 6px;
     color:var(--text);
   }
+  .stats{
+    margin-top:30px;
+  }
+  .stats-title{
+    font-family:var(--serif);
+    font-size:15px;
+    color:var(--text-muted);
+    text-align:center;
+    letter-spacing:1px;
+    margin:0 0 12px;
+  }
+  .stats-cat{
+    margin-top:16px;
+    padding:8px 10px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .stats-cat:first-child{margin-top:0;}
+  .stats-cat:hover{background:var(--panel);}
+  .stats-cat-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .stats-cat-name{
+    flex:1;
+    font-family:var(--serif);
+    font-size:16px;
+    font-weight:700;
+    color:var(--text);
+  }
+  .stats-pct{
+    font-family:var(--mono);
+    font-size:12px;
+    width:38px;
+    text-align:right;
+    flex-shrink:0;
+  }
+  .stats-bar{
+    width:72px;
+    height:6px;
+    border-radius:3px;
+    background:var(--panel-2);
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  .stats-cat .stats-bar{height:8px;width:90px;}
+  .stats-bar-fill{
+    height:100%;
+    border-radius:3px;
+  }
+  .stats-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:5px 10px 5px 22px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .stats-row:hover{background:var(--panel);}
+  .stats-row-name{
+    flex:1;
+    font-family:var(--sans);
+    font-size:13px;
+    color:var(--text-muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
 </style>
 </head>
 <body>
@@ -337,6 +406,11 @@
   <p class="keys">
     <kbd>mezerník</kbd> otočit &nbsp; <kbd>←</kbd> neznal jsem &nbsp; <kbd>→</kbd> znal jsem
   </p>
+
+  <section class="stats">
+    <p class="stats-title">Statistiky úspěšnosti</p>
+    <div id="statsList"></div>
+  </section>
 
   <footer style="margin-top:28px;text-align:center;">
     <a href="https://github.com/Dushino/Czech-HAREC-A-Trainer"
@@ -655,6 +729,7 @@ const ALL_LABEL = {qkody:"Všechny Q-kódy", zkratky:"Všechny zkratky", prefixy
 
 const CAT_LABELS = {qkody:"Q-KÓDY", zkratky:"ZKRATKY", prefixy:"PREFIXY", pasma:"PÁSMA"};
 const STORAGE_KEY = "hamtrainer_v2";
+const STATS_KEY = "hamtrainer_stats_v1";
 
 function loadProgress(){
   try{
@@ -666,7 +741,18 @@ function saveProgress(p){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); }catch(e){}
 }
 
+function loadStats(){
+  try{
+    const raw = localStorage.getItem(STATS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveStats(s){
+  try{ localStorage.setItem(STATS_KEY, JSON.stringify(s)); }catch(e){}
+}
+
 let progress = loadProgress();
+let cardStats = loadStats();
 let state = {
   cat: localStorage.getItem("hamtrainer_lastcat") || "qkody",
   group: "__all__",
@@ -685,6 +771,26 @@ function getBox(cat, idx){
 function setBox(cat, idx, box){
   progress[cardKey(cat, idx)] = Math.max(1, Math.min(5, box));
   saveProgress(progress);
+}
+
+// Počítadla pro statistiky úspěšnosti — nezávislá na Leitnerově boxu.
+// Box určuje, jak často se kartička v kole opakuje (krátkodobé řízení
+// opakování), zatímco tato počítadla sčítají VŠECHNY dosavadní odpovědi
+// na danou kartičku a dávají tak skutečnou dlouhodobou úspěšnost.
+function getCardStats(cat, idx){
+  const k = cardKey(cat, idx);
+  return cardStats[k] || {correct: 0, wrong: 0};
+}
+function recordAnswer(cat, idx, good){
+  const k = cardKey(cat, idx);
+  const s = cardStats[k] || {correct: 0, wrong: 0};
+  if(good) s.correct++; else s.wrong++;
+  cardStats[k] = s;
+  saveStats(cardStats);
+}
+function resetCardStats(cat, idx){
+  delete cardStats[cardKey(cat, idx)];
+  saveStats(cardStats);
 }
 
 function shuffle(arr){
@@ -855,10 +961,12 @@ function grade(good){
   if(!item) return;
   const box = getBox(state.cat, item.idx);
   setBox(state.cat, item.idx, good ? box+1 : 1);
+  recordAnswer(state.cat, item.idx, good);
   if(good) state.sessionGood++; else state.sessionBad++;
   state.pos++;
   state.flipped = false;
   renderCard();
+  renderStats();
 }
 
 function loadLastGroups(){
@@ -875,11 +983,16 @@ function saveLastGroup(cat, group){
   }catch(e){}
 }
 
-function setCategory(cat){
+function setCategory(cat, forcedGroup){
   state.cat = cat;
-  const saved = loadLastGroups()[cat];
-  const validGroups = GROUP_ORDER[cat] || [];
-  state.group = (saved && validGroups.includes(saved)) ? saved : "__all__";
+  if(forcedGroup !== undefined){
+    state.group = forcedGroup;
+    saveLastGroup(cat, forcedGroup);
+  }else{
+    const saved = loadLastGroups()[cat];
+    const validGroups = GROUP_ORDER[cat] || [];
+    state.group = (saved && validGroups.includes(saved)) ? saved : "__all__";
+  }
   localStorage.setItem("hamtrainer_lastcat", cat);
   document.querySelectorAll("#bandswitch button").forEach(b => {
     b.classList.toggle("active", b.dataset.cat === cat);
@@ -900,6 +1013,85 @@ function setGroup(group){
   renderCard();
 }
 
+// --- Statistiky úspěšnosti ---
+
+function hexToRgb(hex){
+  hex = hex.replace('#','').trim();
+  if(hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+  const num = parseInt(hex, 16) || 0;
+  return {r:(num>>16)&255, g:(num>>8)&255, b:num&255};
+}
+function rgbToHex(r,g,b){
+  const h = x => Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,'0');
+  return '#' + h(r) + h(g) + h(b);
+}
+function lerpColor(c1, c2, t){
+  return {r:c1.r+(c2.r-c1.r)*t, g:c1.g+(c2.g-c1.g)*t, b:c1.b+(c2.b-c1.b)*t};
+}
+function successColor(pct){
+  const red = hexToRgb(cssVar('--red-ui','#e2543a'));
+  const mid = hexToRgb(cssVar('--panel-accent','#ffb020'));
+  const green = hexToRgb(cssVar('--green-ui','#6fe3a0'));
+  const c = pct <= 50 ? lerpColor(red, mid, pct/50) : lerpColor(mid, green, (pct-50)/50);
+  return rgbToHex(c.r, c.g, c.b);
+}
+
+function itemSuccessPct(cat, idx){
+  const s = getCardStats(cat, idx);
+  const total = s.correct + s.wrong;
+  return total ? (s.correct / total) * 100 : 0;
+}
+
+function computeCategoryStats(cat){
+  const items = DATA[cat];
+  const groups = GROUP_ORDER[cat] || [];
+  const groupStats = groups.map(g => {
+    const idxs = items.map((_,i) => i).filter(i => items[i][2] === g);
+    const pct = idxs.length ? idxs.reduce((s,i) => s + itemSuccessPct(cat,i), 0) / idxs.length : 0;
+    return {group: g, pct};
+  });
+  const allIdxs = items.map((_,i) => i);
+  const catPct = allIdxs.length ? allIdxs.reduce((s,i) => s + itemSuccessPct(cat,i), 0) / allIdxs.length : 0;
+  return {catPct, groupStats};
+}
+
+const STATS_CAT_LABELS = {qkody:"Q-kódy", zkratky:"Zkratky", prefixy:"Prefixy", pasma:"Pásma"};
+
+function renderStats(){
+  const container = document.getElementById("statsList");
+  if(!container) return;
+  let html = "";
+  Object.keys(STATS_CAT_LABELS).forEach(cat => {
+    const {catPct, groupStats} = computeCategoryStats(cat);
+    const catColor = successColor(catPct);
+    html += '<div class="stats-cat" data-cat="'+cat+'" data-group="__all__">'
+      + '<div class="stats-cat-head">'
+      + '<span class="stats-cat-name">'+STATS_CAT_LABELS[cat]+'</span>'
+      + '<div class="stats-bar"><div class="stats-bar-fill" style="width:'+catPct+'%;background:'+catColor+';"></div></div>'
+      + '<span class="stats-pct" style="color:'+catColor+';">'+Math.round(catPct)+'%</span>'
+      + '</div></div>';
+    groupStats.forEach(({group, pct}) => {
+      const color = successColor(pct);
+      const safeGroup = group.replace(/"/g, '&quot;');
+      html += '<div class="stats-row" data-cat="'+cat+'" data-group="'+safeGroup+'">'
+        + '<span class="stats-row-name">'+group+'</span>'
+        + '<div class="stats-bar"><div class="stats-bar-fill" style="width:'+pct+'%;background:'+color+';"></div></div>'
+        + '<span class="stats-pct" style="color:'+color+';">'+Math.round(pct)+'%</span>'
+        + '</div>';
+    });
+  });
+  container.innerHTML = html;
+}
+
+document.getElementById("statsList") && document.getElementById("statsList").addEventListener("click", e => {
+  const row = e.target.closest("[data-cat]");
+  if(!row) return;
+  const cat = row.dataset.cat;
+  const group = row.dataset.group;
+  setCategory(cat, group);
+  document.querySelector(".wrap").scrollIntoView({behavior:"smooth", block:"start"});
+});
+
 document.getElementById("bandswitch").addEventListener("click", e => {
   const btn = e.target.closest("button[data-cat]");
   if(btn) setCategory(btn.dataset.cat);
@@ -916,16 +1108,17 @@ document.getElementById("btnShuffle").addEventListener("click", () => {
 });
 document.getElementById("btnReset").addEventListener("click", () => {
   const scope = hasGroups(state.cat) && state.group !== "__all__" ? state.group : CAT_LABELS[state.cat];
-  if(!confirm("Resetovat uložený postup pro \"" + scope + "\"?")) return;
+  if(!confirm("Resetovat uložený postup i statistiky pro \"" + scope + "\"?")) return;
   const items = DATA[state.cat];
   items.forEach((it, i) => {
     if(state.group === "__all__" || it[2] === state.group){
       delete progress[cardKey(state.cat, i)];
+      resetCardStats(state.cat, i);
     }
   });
   saveProgress(progress);
   state.sessionGood = 0; state.sessionBad = 0;
-  buildDeck(); renderCard();
+  buildDeck(); renderCard(); renderStats();
 });
 document.getElementById("onlyHard").addEventListener("change", () => {
   state.sessionGood = 0; state.sessionBad = 0;
@@ -939,6 +1132,7 @@ document.addEventListener("keydown", e => {
 
 drawMeterTicks();
 setCategory(state.cat);
+renderStats();
 
 if(window.matchMedia){
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
