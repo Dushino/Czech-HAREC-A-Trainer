@@ -160,10 +160,13 @@
   .counts b{color:var(--text);font-weight:600;}
   .counts .ok{color:var(--green-ui);}
   .counts .bad{color:var(--red-ui);}
-  .smeter{width:150px;height:60px;flex-shrink:0;}
-  #smeter path{stroke:var(--border);}
-  #smeter text{fill:var(--text-muted);}
-  #smeter text.warn{fill:var(--red-ui);}
+  .header-progress{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .header-progress .stats-bar{width:90px;height:8px;}
   .card{
     background:var(--lcd);
     border:2px solid var(--lcd-border);
@@ -375,15 +378,10 @@
       <span>neumím <b class="bad" id="cntBad">0</b></span>
       <span>zbývá <b id="cntLeft">0</b></span>
     </div>
-    <svg class="smeter" viewBox="0 0 150 60" id="smeter">
-      <path d="M 10 55 A 65 65 0 0 1 140 55" fill="none" stroke="#33403f" stroke-width="3"/>
-      <g id="smeterTicks"></g>
-      <text x="12" y="52" fill="#8b9a95" font-family="ui-monospace,monospace" font-size="8">S1</text>
-      <text x="70" y="14" fill="#8b9a95" font-family="ui-monospace,monospace" font-size="8" text-anchor="middle">S9</text>
-      <text x="132" y="52" class="warn" font-family="ui-monospace,monospace" font-size="8" text-anchor="end">+40</text>
-      <line id="needle" x1="75" y1="55" x2="75" y2="12" stroke="#ffb020" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="75" cy="55" r="3.5" fill="#ffb020"/>
-    </svg>
+    <div class="header-progress" id="headerProgress">
+      <div class="stats-bar"><div class="stats-bar-fill" id="headerBarFill"></div></div>
+      <span class="stats-pct" id="headerPct">0%</span>
+    </div>
   </div>
 
   <div class="card" id="card">
@@ -917,7 +915,7 @@ function updateStats(){
   document.getElementById("cntGood").textContent = state.sessionGood;
   document.getElementById("cntBad").textContent = state.sessionBad;
   document.getElementById("cntLeft").textContent = Math.max(0, state.deck.length - state.pos);
-  updateMeter();
+  updateHeaderProgress();
 }
 
 function cssVar(name, fallback){
@@ -925,29 +923,22 @@ function cssVar(name, fallback){
   return v || fallback;
 }
 
-function updateMeter(){
-  const total = state.sessionGood + state.sessionBad;
-  const ratio = total === 0 ? 0.15 : state.sessionGood / total;
-  const angle = -90 + ratio * 180;
-  const needle = document.getElementById("needle");
-  needle.setAttribute("transform", "rotate(" + angle + " 75 55)");
-  needle.setAttribute("stroke", ratio > 0.7 ? cssVar('--green-ui','#6fe3a0') : (ratio > 0.4 ? cssVar('--panel-accent','#ffb020') : cssVar('--red-ui','#e2543a')));
+function currentScopePct(){
+  const items = DATA[state.cat];
+  let idxs = items.map((_,i) => i);
+  if(hasGroups(state.cat) && state.group !== "__all__"){
+    idxs = idxs.filter(i => items[i][2] === state.group);
+  }
+  return idxs.length ? idxs.reduce((s,i) => s + itemSuccessPct(state.cat,i), 0) / idxs.length : 0;
 }
 
-function drawMeterTicks(){
-  const g = document.getElementById("smeterTicks");
-  const ticks = 9;
-  let html = "";
-  for(let i=0;i<=ticks;i++){
-    const t = i/ticks;
-    const ang = (-90 + t*180) * Math.PI/180;
-    const cx=75, cy=55, rOuter=32, rInner=27;
-    const x1 = cx + rInner*Math.sin(ang), y1 = cy - rInner*Math.cos(ang);
-    const x2 = cx + rOuter*Math.sin(ang), y2 = cy - rOuter*Math.cos(ang);
-    const color = t > 0.75 ? cssVar('--red-ui','#e2543a') : cssVar('--border','#33403f');
-    html += '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+color+'" stroke-width="1.5"/>';
-  }
-  g.innerHTML = html;
+function updateHeaderProgress(){
+  const pct = currentScopePct();
+  const color = successColor(pct);
+  const fill = document.getElementById("headerBarFill");
+  const label = document.getElementById("headerPct");
+  if(fill){ fill.style.width = pct + "%"; fill.style.background = color; }
+  if(label){ label.textContent = Math.round(pct) + "%"; label.style.color = color; }
 }
 
 function flip(){
@@ -1130,14 +1121,13 @@ document.addEventListener("keydown", e => {
   else if(e.code === "ArrowLeft" && state.flipped){ grade(false); }
 });
 
-drawMeterTicks();
 setCategory(state.cat);
 renderStats();
 
 if(window.matchMedia){
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    drawMeterTicks();
-    updateMeter();
+    updateHeaderProgress();
+    renderStats();
   });
 }
 
