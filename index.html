@@ -146,9 +146,8 @@
   .statbar{
     display:flex;
     align-items:center;
-    justify-content:space-between;
     gap:14px;
-    margin-bottom:16px;
+    margin-bottom:8px;
   }
   .counts{
     font-family:var(--mono);
@@ -160,6 +159,19 @@
   .counts b{color:var(--text);font-weight:600;}
   .counts .ok{color:var(--green-ui);}
   .counts .bad{color:var(--red-ui);}
+  .header-progress-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:16px;
+  }
+  .header-progress-label{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-muted);
+  }
   .header-progress{
     display:flex;
     align-items:center;
@@ -325,7 +337,8 @@
     width:72px;
     height:6px;
     border-radius:3px;
-    background:var(--panel-2);
+    background:var(--panel);
+    border:1px solid var(--border);
     overflow:hidden;
     flex-shrink:0;
   }
@@ -378,6 +391,10 @@
       <span>neumím <b class="bad" id="cntBad">0</b></span>
       <span>zbývá <b id="cntLeft">0</b></span>
     </div>
+  </div>
+
+  <div class="header-progress-row">
+    <span class="header-progress-label">Celková statistika vybrané oblasti:</span>
     <div class="header-progress" id="headerProgress">
       <div class="stats-bar"><div class="stats-bar-fill" id="headerBarFill"></div></div>
       <span class="stats-pct" id="headerPct">0%</span>
@@ -397,8 +414,8 @@
 
   <div class="toolbar">
     <label><input type="checkbox" id="onlyHard"> jen obtížné</label>
-    <button class="link" id="btnShuffle">zamíchat znovu</button>
-    <button class="link" id="btnReset">resetovat postup výběru</button>
+    <button class="link" id="btnResetScope">reset statistiky vybrané (pod)oblasti</button>
+    <button class="link" id="btnResetAll">reset všech statistik</button>
   </div>
 
   <p class="keys">
@@ -887,7 +904,7 @@ function renderCard(){
   if(!item){
     card.classList.remove("flipped");
     card.classList.add("done");
-    face.textContent = "Výběr procvičen ✓ — zamíchej znovu";
+    face.textContent = "Výběr procvičen ✓ — klikni pro nové kolo";
     hint.textContent = "";
     btnGood.disabled = true;
     btnBad.disabled = true;
@@ -942,7 +959,13 @@ function updateHeaderProgress(){
 }
 
 function flip(){
-  if(!currentItem()) return;
+  if(!currentItem()){
+    // Kolo je hotové — klik na kartičku spustí nové zamíchané kolo.
+    state.sessionGood = 0; state.sessionBad = 0;
+    buildDeck();
+    renderCard();
+    return;
+  }
   state.flipped = !state.flipped;
   renderCard();
 }
@@ -1093,13 +1116,9 @@ document.getElementById("subgroupSelect").addEventListener("change", e => {
 document.getElementById("card").addEventListener("click", flip);
 document.getElementById("btnGood").addEventListener("click", () => grade(true));
 document.getElementById("btnBad").addEventListener("click", () => grade(false));
-document.getElementById("btnShuffle").addEventListener("click", () => {
-  state.sessionGood = 0; state.sessionBad = 0;
-  buildDeck(); renderCard();
-});
-document.getElementById("btnReset").addEventListener("click", () => {
+document.getElementById("btnResetScope").addEventListener("click", () => {
   const scope = hasGroups(state.cat) && state.group !== "__all__" ? state.group : CAT_LABELS[state.cat];
-  if(!confirm("Resetovat uložený postup i statistiky pro \"" + scope + "\"?")) return;
+  if(!confirm("Resetovat statistiky i uložený postup pro \"" + scope + "\"?")) return;
   const items = DATA[state.cat];
   items.forEach((it, i) => {
     if(state.group === "__all__" || it[2] === state.group){
@@ -1108,6 +1127,15 @@ document.getElementById("btnReset").addEventListener("click", () => {
     }
   });
   saveProgress(progress);
+  state.sessionGood = 0; state.sessionBad = 0;
+  buildDeck(); renderCard(); renderStats();
+});
+document.getElementById("btnResetAll").addEventListener("click", () => {
+  if(!confirm("Opravdu resetovat úplně všechny statistiky a uložený postup ve všech oblastech (Q-kódy, zkratky, prefixy, pásma)? Tuto akci nelze vrátit zpět.")) return;
+  progress = {};
+  cardStats = {};
+  saveProgress(progress);
+  saveStats(cardStats);
   state.sessionGood = 0; state.sessionBad = 0;
   buildDeck(); renderCard(); renderStats();
 });
