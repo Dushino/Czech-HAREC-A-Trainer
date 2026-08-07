@@ -1243,14 +1243,30 @@ function startDrivingMode(){
     .then(() => logDrive("✓ tiché audio běží (drží audio session)"))
     .catch(err => logDrive("✗ tiché audio se nespustilo: " + err));
 
-  try{
-    navigator.mediaSession.setActionHandler("nexttrack", drivingNext);
-    navigator.mediaSession.setActionHandler("previoustrack", drivingPrev);
-    navigator.mediaSession.setActionHandler("stop", stopDrivingMode);
-    logDrive("✓ media session handlery zaregistrovány");
-  }catch(e){
-    logDrive("✗ registrace media session selhala: " + e);
-  }
+  // Registrujeme VŠECHNY standardní Media Session akce, ne jen next/prev —
+  // pokud sluchátka posílají něco jiného (např. "seekforward" místo
+  // "nexttrack"), chceme to jednak vidět v logu, jednak to rovnou použít
+  // jako rozumnou náhradu za next/prev.
+  const actionLog = (name) => () => { logDrive("🎛 media akce: " + name); };
+  const actions = {
+    "nexttrack": () => { logDrive("🎛 media akce: nexttrack"); drivingNext(); },
+    "previoustrack": () => { logDrive("🎛 media akce: previoustrack"); drivingPrev(); },
+    "seekforward": () => { logDrive("🎛 media akce: seekforward (beru jako next)"); drivingNext(); },
+    "seekbackward": () => { logDrive("🎛 media akce: seekbackward (beru jako previous)"); drivingPrev(); },
+    "play": actionLog("play"),
+    "pause": actionLog("pause"),
+    "stop": () => { logDrive("🎛 media akce: stop"); stopDrivingMode(); },
+  };
+  let registered = [];
+  Object.keys(actions).forEach(name => {
+    try{
+      navigator.mediaSession.setActionHandler(name, actions[name]);
+      registered.push(name);
+    }catch(e){
+      logDrive("✗ akce '" + name + "' není podporovaná");
+    }
+  });
+  logDrive("✓ zaregistrováno: " + registered.join(", "));
   navigator.mediaSession.playbackState = "playing";
 
   drivingModeActive = true;
@@ -1268,9 +1284,9 @@ function stopDrivingMode(){
   drivingModeActive = false;
   if(silentAudioEl){ silentAudioEl.pause(); }
   try{
-    navigator.mediaSession.setActionHandler("nexttrack", null);
-    navigator.mediaSession.setActionHandler("previoustrack", null);
-    navigator.mediaSession.setActionHandler("stop", null);
+    ["nexttrack","previoustrack","seekforward","seekbackward","play","pause","stop"].forEach(name => {
+      try{ navigator.mediaSession.setActionHandler(name, null); }catch(e){}
+    });
     navigator.mediaSession.playbackState = "none";
   }catch(e){}
   if("speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -1410,9 +1426,18 @@ document.getElementById("onlyHard").addEventListener("change", () => {
   buildDeck(); renderCard();
 });
 document.addEventListener("keydown", e => {
+  if(drivingModeActive){
+    logDrive("⌨ keydown: key=\"" + e.key + "\" code=\"" + e.code + "\" keyCode=" + e.keyCode);
+  }
   if(e.code === "Space"){ e.preventDefault(); flip(); announceCurrentState(); }
   else if(e.code === "ArrowRight" && state.flipped){ grade(true); announceCurrentState(); }
   else if(e.code === "ArrowLeft" && state.flipped){ grade(false); announceCurrentState(); }
+  else if(drivingModeActive){
+    // Média klávesy, které prohlížeč někdy doručí jako běžnou klávesovou
+    // událost místo přes Media Session API (např. MediaTrackNext).
+    if(e.key === "MediaTrackNext"){ drivingNext(); }
+    else if(e.key === "MediaTrackPrevious"){ drivingPrev(); }
+  }
 });
 
 setCategory(state.cat);
