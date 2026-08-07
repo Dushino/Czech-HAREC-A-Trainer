@@ -299,17 +299,25 @@
     align-items:center;
     gap:6px;
   }
-  .toolbar button.link{
-    background:none;
-    border:none;
-    color:var(--text-muted);
-    font-family:var(--mono);
-    font-size:12px;
-    text-decoration:underline;
-    cursor:pointer;
-    padding:0;
+  .reset-row{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:24px;
   }
-  .toolbar button.link:hover{color:var(--panel-accent);}
+  .reset-btn{
+    font-family:var(--sans);
+    font-size:12px;
+    font-weight:600;
+    padding:10px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    background:transparent;
+    color:var(--red-ui);
+    border:1px solid var(--red-dim-ui);
+  }
+  .reset-btn:hover{background:rgba(226,84,58,0.08);}
   .keys{
     margin-top:22px;
     text-align:center;
@@ -448,8 +456,6 @@
 
   <div class="toolbar">
     <label><input type="checkbox" id="onlyHard"> jen obtížné</label>
-    <button class="link" id="btnResetScope">reset statistiky vybrané (pod)oblasti</button>
-    <button class="link" id="btnResetAll">reset všech statistik</button>
   </div>
 
   <p class="keys">
@@ -460,6 +466,11 @@
     <p class="stats-title">Statistiky úspěšnosti</p>
     <div id="statsList"></div>
   </section>
+
+  <div class="reset-row">
+    <button id="btnResetScope" class="reset-btn">🔄 reset statistiky vybrané (pod)oblasti</button>
+    <button id="btnResetAll" class="reset-btn">🗑️ reset všech statistik</button>
+  </div>
 
   <footer style="margin-top:28px;text-align:center;">
     <a href="https://github.com/Dushino/Czech-HAREC-A-Trainer"
@@ -1204,9 +1215,11 @@ function startDrivingMode(){
     silentAudioEl.loop = true;
     // Zvuk musí aktivně hrát, aby appka vůbec získala audio focus (bez
     // přehrávaného <audio> elementu Media Session API na Androidu
-    // nefunguje). Hlasitost necháváme na 0.03 — ověřená funkční hodnota.
-    // silentAudioEl.volume = 0.03;
-	silentAudioEl.volume = 0.00001;
+    // nefunguje). Ověřeno na reálném zařízení: volume = 0 appku z audio
+    // focusu úplně vyřadí (bere se jako "ztlumeno" = nehraje), zatímco
+    // jakákoliv nenulová hodnota funguje. 0.00001 je prakticky neslyšitelná,
+    // ale appce zajistí audio focus.
+    silentAudioEl.volume = 0.00001;
   }
   silentAudioEl.play().catch(() => {});
 
