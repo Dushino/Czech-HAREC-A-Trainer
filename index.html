@@ -1195,7 +1195,7 @@ function startDrivingMode(){
   const btn = document.getElementById("btnDriving");
   if(btn){ btn.textContent = "🎧 Ukončit režim handsfree"; btn.classList.add("active"); }
 
-  speak("Režim za jízdu aktivní. " + scopeSpokenLabel(state.cat, state.group) + ".");
+  speak("Režim handsfree aktivní. Program ovládejte tlačítky pro další nebo předchozí skladbu. " + scopeSpokenLabel(state.cat, state.group) + ".");
   setTimeout(speakFront, 1800);
 }
 
