@@ -4,12 +4,13 @@
 // si ji uloží do cache. Pokud připojení není, použije se poslední
 // úspěšně stažená verze z cache.
 
-const CACHE_NAME = "ok-trainer-v1";
+const CACHE_NAME = "ok-trainer-v2";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icon.svg"
+  "./icon.svg",
+  "./keepalive.wav"
 ];
 
 self.addEventListener("install", (event) => {
