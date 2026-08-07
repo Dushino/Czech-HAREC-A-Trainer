@@ -472,7 +472,6 @@
 
 <script>
 // Každá položka: [přední strana, zadní strana, podskupina]
-// U qkody a zkratky podskupina není potřeba (celá kategorie = jedna skupina "all")
 const DATA = {
 qkody: [
 ["Jsem rušen interferencí:","QRM","Rušení a čitelnost signálu"],
@@ -1211,7 +1210,7 @@ function stopDrivingMode(){
   }catch(e){}
   if("speechSynthesis" in window) window.speechSynthesis.cancel();
   const btn = document.getElementById("btnDriving");
-  if(btn){ btn.textContent = "🚗 Spustit režim za jízdy"; btn.classList.remove("active"); }
+  if(btn){ btn.textContent = "🦻 Spustit režim handsfree"; btn.classList.remove("active"); }
 }
 
 document.getElementById("btnDriving") && document.getElementById("btnDriving").addEventListener("click", () => {
@@ -1309,7 +1308,7 @@ document.getElementById("btnGood").addEventListener("click", () => grade(true));
 document.getElementById("btnBad").addEventListener("click", () => grade(false));
 document.getElementById("btnResetScope").addEventListener("click", () => {
   const scope = hasGroups(state.cat) && state.group !== "__all__" ? state.group : CAT_LABELS[state.cat];
-  if(!confirm("Resetovat statistiky i uložený postup pro \"" + scope + "\"?")) return;
+  if(!confirm("Opravdu vynulovat statistiky i uložený postup pro \"" + scope + "\"?")) return;
   const items = DATA[state.cat];
   items.forEach((it, i) => {
     if(state.group === "__all__" || it[2] === state.group){
@@ -1322,7 +1321,7 @@ document.getElementById("btnResetScope").addEventListener("click", () => {
   buildDeck(); renderCard(); renderStats();
 });
 document.getElementById("btnResetAll").addEventListener("click", () => {
-  if(!confirm("Opravdu resetovat úplně všechny statistiky a uložený postup ve všech oblastech (Q-kódy, zkratky, prefixy, pásma)? Tuto akci nelze vrátit zpět.")) return;
+  if(!confirm("Opravdu vynulovat úplně všechny statistiky a uložený postup ve všech oblastech (Q-kódy, zkratky, prefixy, pásma)? Tuto akci nelze vrátit zpět.")) return;
   progress = {};
   cardStats = {};
   saveProgress(progress);
