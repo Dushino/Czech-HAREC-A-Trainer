@@ -1202,11 +1202,12 @@ function startDrivingMode(){
   if(!silentAudioEl){
     silentAudioEl = new Audio("keepalive.wav");
     silentAudioEl.loop = true;
-    // Ztišení děláme na úrovni přehrávače, ne v datech signálu — čistý,
-    // plnohodnotně kvantovaný tón kodeky (Bluetooth SBC apod.) zpracují
-    // bez artefaktů, na rozdíl od signálu "potichoučku zakódovaného" přímo
-    // do hrubě kvantovaných vzorků.
-    silentAudioEl.volume = 0.03;
+    // Zvuk musí aktivně hrát, aby appka vůbec získala audio focus (bez
+    // přehrávaného <audio> elementu Media Session API na Androidu
+    // nefunguje) — ale hlasitost by na to neměla mít vliv, jde jen o to,
+    // že přehrávání PROBÍHÁ. Zkoušíme proto úplné ztišení (volume 0),
+    // aby to nebylo slyšet a nerušilo.
+    silentAudioEl.volume = 0;
   }
   silentAudioEl.play().catch(() => {});
 
