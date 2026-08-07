@@ -468,8 +468,8 @@
   </section>
 
   <div class="reset-row">
-    <button id="btnResetScope" class="reset-btn">🔄 Reset statistiky vybrané (pod)oblasti</button>
-    <button id="btnResetAll" class="reset-btn">🗑️ Reset všech statistik</button>
+    <button id="btnResetScope" class="reset-btn">🔄 reset statistiky vybrané (pod)oblasti</button>
+    <button id="btnResetAll" class="reset-btn">🗑️ reset všech statistik</button>
   </div>
 
   <footer style="margin-top:28px;text-align:center;">
@@ -1217,9 +1217,11 @@ function startDrivingMode(){
     // přehrávaného <audio> elementu Media Session API na Androidu
     // nefunguje). Ověřeno na reálném zařízení: volume = 0 appku z audio
     // focusu úplně vyřadí (bere se jako "ztlumeno" = nehraje), zatímco
-    // jakákoliv nenulová hodnota funguje. 0.00001 je prakticky neslyšitelná,
-    // ale appce zajistí audio focus.
-    silentAudioEl.volume = 0.00001;
+    // jakákoliv nenulová hodnota funguje. 0.00001 stačilo se zapnutou
+    // obrazovkou, ale po jejím zhasnutí přitvrdí úsporná pravidla systému
+    // a appka o focus přišla — zkoušíme proto o něco vyšší (pořád prakticky
+    // neslyšitelnou) hodnotu, ať má větší rezervu.
+    silentAudioEl.volume = 0.01;
   }
   silentAudioEl.play().catch(() => {});
 
