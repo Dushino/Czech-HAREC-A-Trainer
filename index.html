@@ -283,20 +283,6 @@
     line-height:1.5;
     color:var(--text-muted);
   }
-  .driving-log{
-    margin-top:10px;
-    max-height:140px;
-    overflow-y:auto;
-    text-align:left;
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:8px 10px;
-    font-family:var(--mono);
-    font-size:10px;
-    line-height:1.6;
-    color:var(--text-muted);
-  }
   .toolbar{
     display:flex;
     justify-content:space-between;
@@ -458,7 +444,6 @@
   <div class="driving-row">
     <button id="btnDriving" class="driving-btn">🎧 Spustit režim handsfree</button>
     <p class="driving-hint" id="drivingHint">TTS přečte kartičku, dál se ovládá tlačítky Next/Prev na headsetu, hodinkách nebo ve voze.</p>
-    <div class="driving-log" id="drivingLog" style="display:none;"></div>
   </div>
 
   <div class="toolbar">
@@ -1082,17 +1067,6 @@ function setGroup(group){
 let drivingModeActive = false;
 let silentAudioEl = null;
 
-function logDrive(msg){
-  const el = document.getElementById("drivingLog");
-  if(!el) return;
-  const time = new Date().toLocaleTimeString("cs-CZ", {hour12:false});
-  const line = document.createElement("div");
-  line.textContent = "[" + time + "] " + msg;
-  el.appendChild(line);
-  while(el.children.length > 25) el.removeChild(el.firstChild);
-  el.scrollTop = el.scrollHeight;
-}
-
 // speak(text, onDone) - onDone se zavolá až TTS doopravdy DOŘEKNE text
 // (přes událost 'onend'), místo aby se odhadoval čas přes setTimeout.
 function speak(text, onDone){
@@ -1109,9 +1083,7 @@ function speak(text, onDone){
       u.onerror = onDone; // i při chybě TTS pokračovat dál, ať appka nezůstane trčet
     }
     window.speechSynthesis.speak(u);
-    logDrive("🔊 " + text.slice(0, 50));
   }catch(e){
-    logDrive("⚠ speak() chyba: " + e);
     if(onDone) onDone();
   }
 }
@@ -1126,8 +1098,8 @@ function speakBack(){
 }
 
 // Přehraje odpovídající stranu kartičky (nebo hlášku o konci kola) podle
-// AKTUÁLNÍHO stavu appky. Voláno jak po stisku Next/Prev, tak po ručním
-// dotykovém otočení/hodnocení kartičky, pokud je režim handsfree aktivní.
+// AKTUÁLNÍHO stavu appky. Voláno po ručním dotykovém otočení/hodnocení
+// kartičky, pokud je režim handsfree aktivní.
 function announceCurrentState(){
   if(!drivingModeActive) return;
   const item = currentItem();
@@ -1181,10 +1153,14 @@ function updateDrivingMetadata(){
   }catch(e){}
 }
 
+function speakNextCardOrDone(){
+  if(currentItem()) speakFront();
+  else speak("Kolo dokončeno.");
+}
+
 // Next Track: na prázdné kolo -> další (pod)oblast; na přední straně -> otočit;
 // na zadní straně -> "znal jsem" a posun dál.
 function drivingNext(){
-  logDrive("▶ next track");
   if(!currentItem()){
     advanceScope();
     speak("Další výběr. " + scopeSpokenLabel(state.cat, state.group) + ".", speakFront);
@@ -1195,15 +1171,13 @@ function drivingNext(){
     speakBack();
   }else{
     grade(true);
-    if(currentItem()) speakFront();
-    else speak("Kolo dokončeno.");
+    speak("Znal jsi.", speakNextCardOrDone);
   }
 }
 
 // Prev Track: na prázdné kolo -> restart stejného výběru; na přední straně ->
 // zopakovat otázku; na zadní straně -> "neznal jsem" a posun dál.
 function drivingPrev(){
-  logDrive("◀ previous track");
   if(!currentItem()){
     state.sessionGood = 0; state.sessionBad = 0;
     buildDeck();
@@ -1212,11 +1186,10 @@ function drivingPrev(){
     return;
   }
   if(!state.flipped){
-    speakFront();
+    speak("Čtu znovu.", speakFront);
   }else{
     grade(false);
-    if(currentItem()) speakFront();
-    else speak("Kolo dokončeno.");
+    speak("Neznal jsi.", speakNextCardOrDone);
   }
 }
 
@@ -1225,10 +1198,6 @@ function startDrivingMode(){
     alert("Tento prohlížeč nepodporuje hlasové čtení nebo ovládání přes media tlačítka.");
     return;
   }
-
-  const log = document.getElementById("drivingLog");
-  if(log){ log.innerHTML = ""; log.style.display = "block"; }
-  logDrive("Spouštím režim handsfree…");
 
   if(!silentAudioEl){
     silentAudioEl = new Audio("keepalive.wav");
@@ -1239,34 +1208,23 @@ function startDrivingMode(){
     // do hrubě kvantovaných vzorků.
     silentAudioEl.volume = 0.03;
   }
-  silentAudioEl.play()
-    .then(() => logDrive("✓ tiché audio běží (drží audio session)"))
-    .catch(err => logDrive("✗ tiché audio se nespustilo: " + err));
+  silentAudioEl.play().catch(() => {});
 
   // Registrujeme VŠECHNY standardní Media Session akce, ne jen next/prev —
-  // pokud sluchátka posílají něco jiného (např. "seekforward" místo
-  // "nexttrack"), chceme to jednak vidět v logu, jednak to rovnou použít
-  // jako rozumnou náhradu za next/prev.
-  const actionLog = (name) => () => { logDrive("🎛 media akce: " + name); };
+  // "seekforward"/"seekbackward" bereme jako rozumnou náhradu za next/prev,
+  // kdyby je konkrétní zařízení posílalo místo standardních track-akcí.
   const actions = {
-    "nexttrack": () => { logDrive("🎛 media akce: nexttrack"); drivingNext(); },
-    "previoustrack": () => { logDrive("🎛 media akce: previoustrack"); drivingPrev(); },
-    "seekforward": () => { logDrive("🎛 media akce: seekforward (beru jako next)"); drivingNext(); },
-    "seekbackward": () => { logDrive("🎛 media akce: seekbackward (beru jako previous)"); drivingPrev(); },
-    "play": actionLog("play"),
-    "pause": actionLog("pause"),
-    "stop": () => { logDrive("🎛 media akce: stop"); stopDrivingMode(); },
+    "nexttrack": drivingNext,
+    "previoustrack": drivingPrev,
+    "seekforward": drivingNext,
+    "seekbackward": drivingPrev,
+    "play": () => {},
+    "pause": () => {},
+    "stop": stopDrivingMode,
   };
-  let registered = [];
   Object.keys(actions).forEach(name => {
-    try{
-      navigator.mediaSession.setActionHandler(name, actions[name]);
-      registered.push(name);
-    }catch(e){
-      logDrive("✗ akce '" + name + "' není podporovaná");
-    }
+    try{ navigator.mediaSession.setActionHandler(name, actions[name]); }catch(e){}
   });
-  logDrive("✓ zaregistrováno: " + registered.join(", "));
   navigator.mediaSession.playbackState = "playing";
 
   drivingModeActive = true;
@@ -1292,8 +1250,6 @@ function stopDrivingMode(){
   if("speechSynthesis" in window) window.speechSynthesis.cancel();
   const btn = document.getElementById("btnDriving");
   if(btn){ btn.textContent = "🎧 Spustit režim handsfree"; btn.classList.remove("active"); }
-  const log = document.getElementById("drivingLog");
-  if(log){ log.style.display = "none"; }
 }
 
 document.getElementById("btnDriving") && document.getElementById("btnDriving").addEventListener("click", () => {
@@ -1426,9 +1382,6 @@ document.getElementById("onlyHard").addEventListener("change", () => {
   buildDeck(); renderCard();
 });
 document.addEventListener("keydown", e => {
-  if(drivingModeActive){
-    logDrive("⌨ keydown: key=\"" + e.key + "\" code=\"" + e.code + "\" keyCode=" + e.keyCode);
-  }
   if(e.code === "Space"){ e.preventDefault(); flip(); announceCurrentState(); }
   else if(e.code === "ArrowRight" && state.flipped){ grade(true); announceCurrentState(); }
   else if(e.code === "ArrowLeft" && state.flipped){ grade(false); announceCurrentState(); }
