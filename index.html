@@ -1205,7 +1205,8 @@ function startDrivingMode(){
     // Zvuk musí aktivně hrát, aby appka vůbec získala audio focus (bez
     // přehrávaného <audio> elementu Media Session API na Androidu
     // nefunguje). Hlasitost necháváme na 0.03 — ověřená funkční hodnota.
-    silentAudioEl.volume = 0.03;
+    // silentAudioEl.volume = 0.03;
+	silentAudioEl.volume = 0.0;
   }
   silentAudioEl.play().catch(() => {});
 
