@@ -451,7 +451,7 @@
 
   <div class="driving-row">
     <button id="btnDriving" class="driving-btn">🎧 Spustit režim handsfree</button>
-    <p class="driving-hint" id="drivingHint">TTS přečte kartičku, dál se ovládá tlačítky Next/Prev na headsetu, hodinkách nebo ve voze.</p>
+    <p class="driving-hint" id="drivingHint">TTS přečte kartičku, dál se ovládá tlačítky Next/Prev na headsetu, hodinkách nebo ve voze. Obrazovka zůstane svítit (kvůli spolehlivému ovládání) — jas si před jízdou stáhni na minimum.</p>
   </div>
 
   <div class="toolbar">
@@ -1204,6 +1204,37 @@ function drivingPrev(){
   }
 }
 
+let wakeLockSentinel = null;
+
+// Drží obrazovku rozsvícenou, dokud běží handsfree režim — jediný způsob,
+// jak webová stránka na Androidu zajistí, že appka zůstane spolehlivě
+// ovladatelná i s (jinak) zamčenou obrazovkou. Jas displeje si uživatel
+// může předem stáhnout na minimum, Wake Lock ho jen udrží svítit na té
+// úrovni, nezvyšuje ho.
+async function requestWakeLock(){
+  if(!("wakeLock" in navigator)) return;
+  try{
+    wakeLockSentinel = await navigator.wakeLock.request("screen");
+    wakeLockSentinel.addEventListener("release", () => { wakeLockSentinel = null; });
+  }catch(e){
+    wakeLockSentinel = null;
+  }
+}
+function releaseWakeLock(){
+  if(wakeLockSentinel){
+    try{ wakeLockSentinel.release(); }catch(e){}
+    wakeLockSentinel = null;
+  }
+}
+// Wake Lock se automaticky uvolní, kdykoliv stránka přestane být viditelná
+// (přepnutí appky, uzamčení telefonu apod.) — jakmile se stránka zase stane
+// viditelnou a handsfree režim ještě běží, zkusíme ho obnovit.
+document.addEventListener("visibilitychange", () => {
+  if(drivingModeActive && document.visibilityState === "visible" && !wakeLockSentinel){
+    requestWakeLock();
+  }
+});
+
 function startDrivingMode(){
   if(!("speechSynthesis" in window) || !("mediaSession" in navigator)){
     alert("Tento prohlížeč nepodporuje hlasové čtení nebo ovládání přes media tlačítka.");
@@ -1217,13 +1248,12 @@ function startDrivingMode(){
     // přehrávaného <audio> elementu Media Session API na Androidu
     // nefunguje). Ověřeno na reálném zařízení: volume = 0 appku z audio
     // focusu úplně vyřadí (bere se jako "ztlumeno" = nehraje), zatímco
-    // jakákoliv nenulová hodnota funguje. 0.00001 stačilo se zapnutou
-    // obrazovkou, ale po jejím zhasnutí přitvrdí úsporná pravidla systému
-    // a appka o focus přišla — zkoušíme proto o něco vyšší (pořád prakticky
-    // neslyšitelnou) hodnotu, ať má větší rezervu.
-    silentAudioEl.volume = 0.01;
+    // jakákoliv nenulová hodnota funguje — 0.00001 je prakticky neslyšitelná.
+    // Spolehlivost s vypnutou obrazovkou teď řeší Wake Lock výše, ne hlasitost.
+    silentAudioEl.volume = 0.00001;
   }
   silentAudioEl.play().catch(() => {});
+  requestWakeLock();
 
   // Registrujeme VŠECHNY standardní Media Session akce, ne jen next/prev —
   // "seekforward"/"seekbackward" bereme jako rozumnou náhradu za next/prev,
@@ -1255,6 +1285,7 @@ function startDrivingMode(){
 
 function stopDrivingMode(){
   drivingModeActive = false;
+  releaseWakeLock();
   if(silentAudioEl){ silentAudioEl.pause(); }
   try{
     ["nexttrack","previoustrack","seekforward","seekbackward","play","pause","stop"].forEach(name => {
