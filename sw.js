@@ -1,4 +1,4 @@
-// OK-Trainer — service worker pro offline chod appky.
+// CZ HAREC A Trainer — service worker pro offline chod appky.
 // Strategie: "network-first, cache jako záloha" — pokud je připojení
 // k internetu, appka si vždy natáhne nejčerstvější verzi a zároveň
 // si ji uloží do cache. Pokud připojení není, použije se poslední

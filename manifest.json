@@ -1,6 +1,6 @@
 {
-  "name": "OK-Trainer – kartičky HAREC A",
-  "short_name": "OK-Trainer",
+  "name": "CZ HAREC A Trainer",
+  "short_name": "CZ HAREC A",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

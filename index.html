@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OK-TRAINER — kartičky pro zkoušku HAREC A</title>
+<title>CZ HAREC A Trainer</title>
 <meta name="theme-color" content="#eee8d9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12181a" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="OK-Trainer">
+<meta name="apple-mobile-web-app-title" content="CZ HAREC A Trainer">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -78,8 +78,8 @@
   header{margin-bottom:18px;text-align:center;}
   .callsign{
     font-family:var(--serif);
-    font-size:26px;
-    letter-spacing:2px;
+    font-size:22px;
+    letter-spacing:1px;
     color:var(--panel-accent);
     margin:0 0 4px;
   }
@@ -407,7 +407,7 @@
 <body>
 <div class="wrap">
   <header>
-    <p class="callsign">OK-TRAINER</p>
+    <p class="callsign">CZ HAREC A TRAINER</p>
     <p class="sub">kartičky pro zkoušku HAREC třída A dle podkladů ČTÚ ze dne 17. 6. 2025</p>
   </header>
 
@@ -1159,7 +1159,7 @@ function updateDrivingMetadata(){
   try{
     navigator.mediaSession.metadata = new MediaMetadata({
       title: scopeSpokenLabel(state.cat, state.group),
-      artist: "OK-Trainer"
+      artist: "CZ HAREC A Trainer"
     });
   }catch(e){}
 }
