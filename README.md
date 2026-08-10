@@ -1,4 +1,4 @@
-# OK-Trainer
+# CZ HAREC A
 
 ## Tréning pro písemný test zkoušky odborné způsobilosti k obsluze vysílacích rádiových zařízení amatérské radiokomunikační služby ve verzi HAREC třídy A dle podkladů ČTÚ ze dne 17. 6. 2025
 
