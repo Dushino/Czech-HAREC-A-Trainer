@@ -4,6 +4,7 @@
 
 **Nahrazeno obecnější aplikací https://dushino.github.io/OK-Trainer/**
 
+- **V této aplikaci nejsou všechny otázky pro zkoušku! Použijte https://dushino.github.io/OK-Trainer/ pro kompletní sadu kartiček**
 
 Aplikace je zde: https://dushino.github.io/Czech-HAREC-A-Trainer/
 
@@ -20,6 +21,7 @@ Aplikace je zde: https://dushino.github.io/Czech-HAREC-A-Trainer/
 - S aplikací je nyní možno pracovat v režimu handsfree. Aplikace pomocí syntézy řeči přečte kartičku, tlačítkem "Další skladba" kartičku otočíte a je přečtena odpověď. Tlačítko "Předchozí skladba" přečte tet kartičky znovu. Po přečtení odpovědi tlačítkem "Další skladba" potvrdítem že jste odpověď znal, tlačítkem "Předchozí skladba" potvrdíte, že jste odpověď neznal. Po dokončení sady testů aplikace inteligentně přejde na další testy. Jestliže jste dělali testy podoblasti, aplikace vezme další podoblast. Jestliže jste dělali testy celé oblasti, další spuštěný test bude také celé oblasti. **Při použití vždy dbejte na bezpečnost svou i okolí! Varuji před použitím při řízení!**  
 - Aplikace byla vytvořena pomocí Claude AI dle mých instrukcí. Jestliže máte námět na zlepšení, dejte vědět založením chyby. Cílem je mít funkční aplikaci, která pomáhá, ne nějaký AI blábol.
 - **Prosím, buďte si vědomi toho, že se zříkám jakékoliv odpovědnosti za důsledky použití aplikace. Ačkoliv to vypadá, že odpovědi jsou správné, dosud jsem je všechny neskontroloval. Jsem také přesvědčen, že "aplikace" funguje dle popisu, ale testuji to postupně**
+
 
 
 _Držím palce při zkoušce!_
