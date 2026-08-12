@@ -2,6 +2,9 @@
 
 ## Tréning pro písemný test zkoušky odborné způsobilosti k obsluze vysílacích rádiových zařízení amatérské radiokomunikační služby ve verzi HAREC třídy A dle podkladů ČTÚ ze dne 17. 6. 2025
 
+**Nahrazeno obecnější aplikací https://dushino.github.io/OK-Trainer/**
+
+
 Aplikace je zde: https://dushino.github.io/Czech-HAREC-A-Trainer/
 
 - Jedná se o "aplikaci", která předloží kartičku s otázkou, uživatel na ni odpoví, kartičku otočí a skontroluje, jestli byla odpověď správná a nakonec označí, jestli odpověď znal nebo ne.
